@@ -1,4 +1,4 @@
-#Herramienta para cifrados usando Java Cryptography Extension (JCE) 
+# Herramienta para cifrados usando Java Cryptography Extension (JCE) 
 
 ### Configuarción de JRE 
 Agregar el Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files, para poder eliminar la restricción de clave de 128 bits en Java. [(Ver)](https://www.javamex.com/tutorials/cryptography/unrestricted_policy_files.shtml) 
