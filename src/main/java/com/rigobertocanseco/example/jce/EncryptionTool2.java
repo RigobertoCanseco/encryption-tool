@@ -1,6 +1,5 @@
 package com.bancoazteca.ebanking.web.security.sso.tools;
 
-import com.bancoazteca.ebanking.util.Encrypt;
 import org.apache.commons.codec.binary.Base64;
 
 import javax.crypto.*;
