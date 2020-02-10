@@ -15,6 +15,10 @@ Descargas
 Extraiga los archivos jar del zip y guárdelos en ${java.home}/jre/lib/security/
 
 ### Problemas
+
+Posibles problemas y como resolverlos
+
 [Java Security: Illegal key size or default parameters](https://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters/6481658#6481658)
 
+[PBKDF2WithHmacSHA256 SecretKeyFactory not available](https://stackoverflow.com/questions/47392965/pbkdf2withhmacsha512-secretkeyfactory-not-available)
 
