@@ -9,14 +9,17 @@ import java.security.*;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 
+/**
+ * Encryption Tool
+ */
 public class EncryptionTool {
-    private final static int ITERATIONS = 65536 ;
+    private final static int ITERATIONS = 65536;
     private final static int KEY_SIZE = 256;
 
     /**
-     * Class EncryptionToolException
+     * Class Exception: Encryption Tool
      */
-    static class EncryptionToolException extends Exception {
+    public static class EncryptionToolException extends Exception {
         public EncryptionToolException(String message, Throwable cause){
             super(message, cause);
         }
@@ -25,7 +28,7 @@ public class EncryptionTool {
     /**
      * Class Message
      */
-    static class Message {
+    public static class Message {
         private byte[] message;
 
         public Message(byte[] message){
@@ -88,13 +91,13 @@ public class EncryptionTool {
     }
 
     /**
-     * Class AES
+     * Class AES to encrypt with algorithm AES
      */
-    static final class AES {
+    public static final class AES {
 
         /**
-         * Genera una llave
-         * @return
+         * Get a Key
+         * @return byte[]
          * @throws EncryptionTool.EncryptionToolException Key generator failed
          */
         public static byte[] getKey() throws EncryptionTool.EncryptionToolException {
@@ -102,7 +105,7 @@ public class EncryptionTool {
                 KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
                 keyGenerator.init(KEY_SIZE, new SecureRandom());
                 int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
-                System.out.println("MAX LENGTH KEY AES: " + maxKeyLen);
+                System.out.println("MAX LENGTH KEY AES:" + maxKeyLen);
 
                 return keyGenerator.generateKey().getEncoded();
             }catch (Exception ex){
@@ -111,7 +114,7 @@ public class EncryptionTool {
         }
 
         /**
-         * Genera un salt aleatorio
+         * Get a salt random
          * @return byte[]
          */
         public static byte[] getSalt() {
@@ -122,7 +125,7 @@ public class EncryptionTool {
         }
 
         /**
-         * Genera un IV aleatorio
+         * Get a IV random
          * @return byte[]
          */
         public static byte[] getIV() {
@@ -134,12 +137,12 @@ public class EncryptionTool {
         }
 
         /**
-         * Cifra un string con algoritmo AES
+         * Encrypt a string with algorithm AES
          * @param secret String
          * @param iv String
          * @param salt String
          * @param string String
-         * @return Retorna un Message encode64
+         * @return Return a String encode64
          * @throws EncryptionToolException AES encrypt failed
          */
         public static String encrypt(String secret, String iv, String salt, String string) throws EncryptionToolException {
@@ -159,7 +162,7 @@ public class EncryptionTool {
         }
 
         /**
-         * Descifra un string con algoritmo AES
+         * Decrypt a string with algorithm AES
          * @param secret String
          * @param iv String
          * @param salt String
@@ -183,10 +186,33 @@ public class EncryptionTool {
             }
         }
 
+        /**
+         * Genera HMAC-SHA256
+         * @param secret String
+         * @param salt String
+         * @param message String
+         * @return Message
+         * @throws EncryptionToolException HMAC-SHA256 generator failed
+         */
+        public static String generateHmacSHA256(String secret, String salt, String message) throws EncryptionToolException {
+            try {
+                Mac mac = Mac.getInstance("HmacSHA256");
+                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+                KeySpec spec = new PBEKeySpec(secret.toCharArray(), Base64.decodeBase64(salt.getBytes()), ITERATIONS, KEY_SIZE);
+                SecretKey tmp = factory.generateSecret(spec);
+                SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+                mac.init(secretKey);
+
+                return new String(Base64.encodeBase64(mac.doFinal(message.getBytes("UTF-8"))));
+            }catch (Exception ex){
+                throw new EncryptionToolException("HMAC-256 generator failed:" + ex.getMessage(), ex);
+            }
+        }
+
     }
 
     /**
-     * Agregar un proveedor criptografico
+     * Add a cryptography provider
      * @param provider Provider
      */
     public static void addProvider(Provider provider){
@@ -194,7 +220,7 @@ public class EncryptionTool {
     }
 
     /**
-     * Genera una llave AES 256
+     * Generate a key AES
      * @return SecretKey
      * @throws EncryptionToolException, Key Generator failed
      */
@@ -203,7 +229,7 @@ public class EncryptionTool {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
             keyGenerator.init(KEY_SIZE, new SecureRandom());
             int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
-            System.out.println("MAX LENGTH KEY AES: " + maxKeyLen);
+            System.out.println("MAX LENGTH KEY AES:" + maxKeyLen);
 
             return keyGenerator.generateKey();
         }catch (Exception ex){
@@ -212,7 +238,7 @@ public class EncryptionTool {
     }
 
     /**
-     * Genera un par de llaves DSA
+     * Generate a pkey pair DSA
      * @return KeyPair
      * @throws EncryptionToolException Key pair generator failed
      */
@@ -235,7 +261,7 @@ public class EncryptionTool {
     public static String encode64(byte[] bytes) throws EncryptionToolException {
         try {
             return new String(Base64.encodeBase64(bytes));
-        } catch (Exception ex){
+        }catch (Exception ex){
             throw new EncryptionToolException("Bytes to encode64 failed:" + ex.getMessage(), ex);
         }
     }
@@ -255,7 +281,7 @@ public class EncryptionTool {
     }
 
     /**
-     * Genera MD5
+     * Generate MD5
      * @param message Message
      * @return Message
      * @throws EncryptionToolException Bytes to MD5 failed
@@ -271,7 +297,7 @@ public class EncryptionTool {
     }
 
     /**
-     * Genera SHA-256
+     * Generate SHA-256
      * @param message Message
      * @return Message
      * @throws EncryptionToolException Bytes to SHA-256 failed
@@ -287,7 +313,7 @@ public class EncryptionTool {
     }
 
     /**
-     * Genera SHA-512
+     * Generate SHA-512
      * @param message Message
      * @return Message
      * @throws EncryptionToolException Bytes to ShA-512 failed
@@ -303,47 +329,20 @@ public class EncryptionTool {
         }
     }
 
-    /**
-     * Genera HMAC-SHA256
-     * @param key Key
-     * @param message Message
-     * @return Message
-     * @throws EncryptionToolException HMAC-SHA256 generator failed
-     */
-    public static Message generateHmacSHA256(Key key, Message message) throws EncryptionToolException {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-
-            byte[] keyBytes   = new byte[]{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-            String algorithm  = "RawBytes";
-            SecretKeySpec key2 = new SecretKeySpec(keyBytes, algorithm);
-            mac.init(key2);
-
-            return new Message(mac.doFinal(message.getMessage()));
-        }catch (Exception ex){
-            throw new EncryptionToolException("HMAC-256 generator failed:" + ex.getMessage(), ex);
-        }
-    }
-
-
     public static void main(String[] args) throws Exception {
-        String originalString = "hola mundo";
+
         byte[] key = EncryptionTool.AES.getKey();
         byte[] iv = EncryptionTool.AES.getIV();
         byte[] salt = EncryptionTool.AES.getSalt();
-
+        String originalString = "hola";
         System.out.println(EncryptionTool.encode64(key));
         System.out.println(EncryptionTool.encode64(iv));
         System.out.println(EncryptionTool.encode64(salt));
-
-
         String encryptedString = EncryptionTool.AES.encrypt(EncryptionTool.encode64(key), EncryptionTool.encode64(iv),
                 EncryptionTool.encode64(salt), originalString);
         System.out.println(encryptedString);
-
         String decryptedString = EncryptionTool.AES.decrypt(EncryptionTool.encode64(key), EncryptionTool.encode64(iv),
                 EncryptionTool.encode64(salt), encryptedString);
-
         System.out.println(decryptedString);
     }
 }
