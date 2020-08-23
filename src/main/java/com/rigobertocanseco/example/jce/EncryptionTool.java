@@ -1,4 +1,5 @@
 package com.rigobertocanseco.example.jce;
+
 import org.apache.commons.codec.binary.Base64;
 
 import javax.crypto.*;
@@ -7,6 +8,8 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
 /**
@@ -17,10 +20,167 @@ public class EncryptionTool {
     private final static int KEY_SIZE = 256;
 
     /**
+     * Add a cryptography provider
+     *
+     * @param provider Provider
+     */
+    public static void addProvider(Provider provider) {
+        Security.addProvider(provider);
+    }
+
+    /**
+     * Generate a key AES
+     *
+     * @return SecretKey
+     * @throws EncryptionToolException, Key Generator failed
+     */
+    public static SecretKey keyGenerator() throws EncryptionToolException {
+        try {
+            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator.init(KEY_SIZE, new SecureRandom());
+            int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
+            System.out.println("MAX LENGTH KEY AES:" + maxKeyLen);
+
+            return keyGenerator.generateKey();
+        } catch (Exception ex) {
+            throw new EncryptionToolException("Key generator failed:" + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Generate a pkey pair DSA
+     *
+     * @return KeyPair
+     * @throws EncryptionToolException Key pair generator failed
+     */
+    public static KeyPair keyPairGenerator() throws EncryptionToolException {
+        try {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
+
+            return keyPairGenerator.generateKeyPair();
+        } catch (Exception ex) {
+            throw new EncryptionToolException("Key pair generator failed:" + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Encode Base64
+     *
+     * @param bytes Bytes
+     * @return String
+     * @throws EncryptionToolException Bytes to Base64 failed
+     */
+    public static String encode64(byte[] bytes) throws EncryptionToolException {
+        try {
+            return new String(Base64.encodeBase64(bytes));
+        } catch (Exception ex) {
+            throw new EncryptionToolException("Bytes to encode64 failed:" + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Decode Base64
+     *
+     * @param bytes Bytes
+     * @return String
+     * @throws EncryptionToolException Bytes to Base64 failed
+     */
+    public static String decode64(byte[] bytes) throws EncryptionToolException {
+        try {
+            return new String(Base64.decodeBase64(bytes));
+        } catch (Exception ex) {
+            throw new EncryptionToolException("Bytes to decode64 failed:" + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Generate MD5
+     *
+     * @param message Message
+     * @return Message
+     * @throws EncryptionToolException Bytes to MD5 failed
+     */
+    public static Message messageToMD5(Message message) throws EncryptionToolException {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+
+            return new Message(messageDigest.digest(message.getMessage()));
+        } catch (Exception ex) {
+            throw new EncryptionToolException("Bytes to MD5 failed:" + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Generate SHA-256
+     *
+     * @param message Message
+     * @return Message
+     * @throws EncryptionToolException Bytes to SHA-256 failed
+     */
+    public static Message messageToSHA256(Message message) throws EncryptionToolException {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+
+            return new Message(messageDigest.digest(message.getMessage()));
+        } catch (Exception ex) {
+            throw new EncryptionToolException("Bytes to SHA-256 failed:" + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Generate SHA-512
+     *
+     * @param message Message
+     * @return Message
+     * @throws EncryptionToolException Bytes to ShA-512 failed
+     */
+    public static Message messageToSHA512(Message message) throws EncryptionToolException {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-512");
+            byte[] digest = messageDigest.digest(message.getMessage());
+
+            return new Message(digest);
+        } catch (Exception ex) {
+            throw new EncryptionToolException("Bytes to SHA-512 failed:" + ex.getMessage(), ex);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        byte[] key = EncryptionTool.AES.getKey();
+        byte[] iv = EncryptionTool.AES.getIV();
+        byte[] salt = EncryptionTool.AES.getSalt();
+        String originalString = "hola";
+        System.out.println(EncryptionTool.encode64(key));
+        System.out.println(EncryptionTool.encode64(iv));
+        System.out.println(EncryptionTool.encode64(salt));
+        String encryptedString = EncryptionTool.AES.encrypt(EncryptionTool.encode64(key), EncryptionTool.encode64(iv),
+                EncryptionTool.encode64(salt), originalString);
+        System.out.println(encryptedString);
+        String decryptedString = EncryptionTool.AES.decrypt(EncryptionTool.encode64(key), EncryptionTool.encode64(iv),
+                EncryptionTool.encode64(salt), encryptedString);
+        System.out.println(decryptedString);
+
+        String[] keyPair = EncryptionTool.RSA.keyPairGenerator();
+
+        String privateKey = keyPair[0];
+        String publicKey = keyPair[1];
+
+
+        System.out.println(privateKey);
+        System.out.println(publicKey);
+        encryptedString = EncryptionTool.RSA.encrypt(originalString, publicKey);
+        System.out.println(encryptedString);
+        decryptedString = EncryptionTool.RSA.decrypt(encryptedString, privateKey);
+        System.out.println(decryptedString);
+
+    }
+
+    /**
      * Class Exception: Encryption Tool
      */
     public static class EncryptionToolException extends Exception {
-        public EncryptionToolException(String message, Throwable cause){
+        public EncryptionToolException(String message, Throwable cause) {
             super(message, cause);
         }
     }
@@ -31,11 +191,11 @@ public class EncryptionTool {
     public static class Message {
         private byte[] message;
 
-        public Message(byte[] message){
+        public Message(byte[] message) {
             this.message = Base64.encodeBase64(message);
         }
 
-        public Message(String message)  {
+        public Message(String message) {
             try {
                 this.message = message.getBytes("UTF-8");
             } catch (Exception ex) {
@@ -58,7 +218,7 @@ public class EncryptionTool {
         public String encode64() throws EncryptionToolException {
             try {
                 return new String(Base64.encodeBase64(this.message));
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 throw new EncryptionToolException("Bytes to Base64 failed:" + ex.getMessage(), ex);
             }
         }
@@ -66,7 +226,7 @@ public class EncryptionTool {
         public String decode64() throws EncryptionToolException {
             try {
                 return new String(Base64.decodeBase64(this.message));
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 throw new EncryptionToolException("Bytes to Base64 failed:" + ex.getMessage(), ex);
             }
         }
@@ -97,6 +257,7 @@ public class EncryptionTool {
 
         /**
          * Get a Key
+         *
          * @return byte[]
          * @throws EncryptionTool.EncryptionToolException Key generator failed
          */
@@ -108,13 +269,14 @@ public class EncryptionTool {
                 System.out.println("MAX LENGTH KEY AES:" + maxKeyLen);
 
                 return keyGenerator.generateKey().getEncoded();
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 throw new EncryptionTool.EncryptionToolException("Key generator failed:" + ex.getMessage(), ex);
             }
         }
 
         /**
          * Get a salt random
+         *
          * @return byte[]
          */
         public static byte[] getSalt() {
@@ -126,6 +288,7 @@ public class EncryptionTool {
 
         /**
          * Get a IV random
+         *
          * @return byte[]
          */
         public static byte[] getIV() {
@@ -138,9 +301,10 @@ public class EncryptionTool {
 
         /**
          * Encrypt a string with algorithm AES
+         *
          * @param secret String
-         * @param iv String
-         * @param salt String
+         * @param iv     String
+         * @param salt   String
          * @param string String
          * @return Return a String encode64
          * @throws EncryptionToolException AES encrypt failed
@@ -163,9 +327,10 @@ public class EncryptionTool {
 
         /**
          * Decrypt a string with algorithm AES
+         *
          * @param secret String
-         * @param iv String
-         * @param salt String
+         * @param iv     String
+         * @param salt   String
          * @param string String
          * @return String
          * @throws EncryptionToolException AES decrypt failed
@@ -188,8 +353,9 @@ public class EncryptionTool {
 
         /**
          * Genera HMAC-SHA256
-         * @param secret String
-         * @param salt String
+         *
+         * @param secret  String
+         * @param salt    String
          * @param message String
          * @return Message
          * @throws EncryptionToolException HMAC-SHA256 generator failed
@@ -204,145 +370,65 @@ public class EncryptionTool {
                 mac.init(secretKey);
 
                 return new String(Base64.encodeBase64(mac.doFinal(message.getBytes("UTF-8"))));
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 throw new EncryptionToolException("HMAC-256 generator failed:" + ex.getMessage(), ex);
             }
         }
 
     }
 
-    /**
-     * Add a cryptography provider
-     * @param provider Provider
-     */
-    public static void addProvider(Provider provider){
-        Security.addProvider(provider);
-    }
+    public static final class RSA {
 
-    /**
-     * Generate a key AES
-     * @return SecretKey
-     * @throws EncryptionToolException, Key Generator failed
-     */
-    public static SecretKey keyGenerator() throws EncryptionToolException {
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-            keyGenerator.init(KEY_SIZE, new SecureRandom());
-            int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
-            System.out.println("MAX LENGTH KEY AES:" + maxKeyLen);
+        public static String[] keyPairGenerator() throws EncryptionToolException {
+            try {
+                KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+                keyPairGenerator.initialize(4096);
+                System.out.println("KEY SIZE RSA 4096");
+                KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
-            return keyGenerator.generateKey();
-        }catch (Exception ex){
-            throw new EncryptionToolException("Key generator failed:" + ex.getMessage(), ex);
+                return new String[] {
+                    new String(Base64.encodeBase64(keyPair.getPrivate().getEncoded())),
+                    new String(Base64.encodeBase64(keyPair.getPublic().getEncoded()))
+                };
+            } catch (Exception ex) {
+                throw new EncryptionTool.EncryptionToolException("Key generator failed:" + ex.getMessage(), ex);
+            }
         }
-    }
 
-    /**
-     * Generate a pkey pair DSA
-     * @return KeyPair
-     * @throws EncryptionToolException Key pair generator failed
-     */
-    public static KeyPair keyPairGenerator() throws EncryptionToolException {
-        try {
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
-
-            return keyPairGenerator.generateKeyPair();
-        } catch (Exception ex) {
-            throw new EncryptionToolException("Key pair generator failed:" + ex.getMessage(), ex);
+        public static String encrypt(String data, String publicKey) throws EncryptionToolException {
+            try {
+                Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                cipher.init(Cipher.ENCRYPT_MODE, getPublicKey(publicKey));
+                return new String(Base64.encodeBase64(cipher.doFinal(data.getBytes("UTF-8"))));
+            } catch (Exception ex) {
+                throw new EncryptionToolException("RSA encrypt failed:" + ex.getMessage(), ex);
+            }
         }
-    }
 
-    /**
-     * Encode Base64
-     * @param bytes Bytes
-     * @return String
-     * @throws EncryptionToolException Bytes to Base64 failed
-     */
-    public static String encode64(byte[] bytes) throws EncryptionToolException {
-        try {
-            return new String(Base64.encodeBase64(bytes));
-        }catch (Exception ex){
-            throw new EncryptionToolException("Bytes to encode64 failed:" + ex.getMessage(), ex);
+        public static String decrypt(String data, String base64PrivateKey) throws EncryptionToolException {
+            try {
+                Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                cipher.init(Cipher.DECRYPT_MODE, getPrivateKey(base64PrivateKey));
+                return new String(cipher.doFinal(Base64.decodeBase64(data.getBytes("UTF-8"))));
+            } catch (Exception ex) {
+                throw new EncryptionToolException("RSA decrypt failed:" + ex.getMessage(), ex);
+            }
         }
-    }
 
-    /**
-     * Decode Base64
-     * @param bytes Bytes
-     * @return String
-     * @throws EncryptionToolException Bytes to Base64 failed
-     */
-    public static String decode64(byte[] bytes) throws EncryptionToolException {
-        try {
-            return new String(Base64.decodeBase64(bytes));
-        }catch (Exception ex){
-            throw new EncryptionToolException("Bytes to decode64 failed:" + ex.getMessage(), ex);
+        public static PublicKey getPublicKey(String base64PublicKey) throws EncryptionToolException {
+            try {
+                return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(Base64.decodeBase64(base64PublicKey.getBytes())));
+            } catch (Exception ex) {
+                throw new EncryptionTool.EncryptionToolException("Key generator failed:" + ex.getMessage(), ex);
+            }
         }
-    }
 
-    /**
-     * Generate MD5
-     * @param message Message
-     * @return Message
-     * @throws EncryptionToolException Bytes to MD5 failed
-     */
-    public static Message messageToMD5(Message message) throws EncryptionToolException {
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-
-            return new Message(messageDigest.digest(message.getMessage()));
-        }catch (Exception ex){
-            throw new EncryptionToolException("Bytes to MD5 failed:" + ex.getMessage(), ex);
+        public static PrivateKey getPrivateKey(String base64PrivateKey) throws EncryptionToolException {
+            try {
+                return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(Base64.decodeBase64(base64PrivateKey.getBytes())));
+            } catch (Exception ex) {
+                throw new EncryptionTool.EncryptionToolException("Key generator failed:" + ex.getMessage(), ex);
+            }
         }
-    }
-
-    /**
-     * Generate SHA-256
-     * @param message Message
-     * @return Message
-     * @throws EncryptionToolException Bytes to SHA-256 failed
-     */
-    public static Message messageToSHA256(Message message) throws EncryptionToolException {
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-
-            return new Message(messageDigest.digest(message.getMessage()));
-        }catch (Exception ex){
-            throw new EncryptionToolException("Bytes to SHA-256 failed:" + ex.getMessage(), ex);
-        }
-    }
-
-    /**
-     * Generate SHA-512
-     * @param message Message
-     * @return Message
-     * @throws EncryptionToolException Bytes to ShA-512 failed
-     */
-    public static Message messageToSHA512(Message message) throws EncryptionToolException {
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-512");
-            byte[] digest = messageDigest.digest(message.getMessage());
-
-            return new Message(digest);
-        }catch (Exception ex){
-            throw new EncryptionToolException("Bytes to SHA-512 failed:" + ex.getMessage(), ex);
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-
-        byte[] key = EncryptionTool.AES.getKey();
-        byte[] iv = EncryptionTool.AES.getIV();
-        byte[] salt = EncryptionTool.AES.getSalt();
-        String originalString = "hola";
-        System.out.println(EncryptionTool.encode64(key));
-        System.out.println(EncryptionTool.encode64(iv));
-        System.out.println(EncryptionTool.encode64(salt));
-        String encryptedString = EncryptionTool.AES.encrypt(EncryptionTool.encode64(key), EncryptionTool.encode64(iv),
-                EncryptionTool.encode64(salt), originalString);
-        System.out.println(encryptedString);
-        String decryptedString = EncryptionTool.AES.decrypt(EncryptionTool.encode64(key), EncryptionTool.encode64(iv),
-                EncryptionTool.encode64(salt), encryptedString);
-        System.out.println(decryptedString);
     }
 }
