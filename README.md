@@ -35,6 +35,27 @@ Posibles problemas y como resolverlos
 
 [PBKDF2WithHmacSHA256 SecretKeyFactory not available](https://stackoverflow.com/questions/47392965/pbkdf2withhmacsha512-secretkeyfactory-not-available)
 
+#### OpenSSL
+
+Generar par de llaves y certificado  
+openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+
+Convertir llave pkcs8 a DER   
+openssl pkcs8 -topk8 -nocrypt -outform DER < master.key > master.pk8
+
+Mostar certificado   
+openssl x509 -text -noout -in certificate.pem
+
+Mostar llave pública de un certificado   
+openssl x509 -noout -in certificate.pem -pubkey
+
+Mostar llave pública de una llave privada   
+openssl rsa -in key.pem -pubout
+
+Mostar llave pública de un certificado CSR   
+openssl req -noout -in certificate.csr -pubkey
+
+
 ### Bibliografía
 
 https://docs.oracle.com/javase/8/docs/technotes/guides/security/index.html
